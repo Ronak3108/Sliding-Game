@@ -25,10 +25,12 @@ t.write("SLIDE MASTER", align = "center", font = ("Courier", 80, "bold"))
 
 #creating a variable to monitor state
 game_state = "NA"
+user_name = ""
 
-#function that starts the game
-def startGame():
 
+#function that starts the game---------------------------------------------------------------------------------------------------->
+def home():
+    global game_state
     game_state = "home_screen"   #changing the game state to home_screen
     
     button_names = ["NEW GAME", "SAVED GAMES", "LEADERBOARD"]
@@ -42,15 +44,12 @@ def startGame():
         t.goto((width/2)-200, var_height)
         t.pendown()
         t.fillcolor("#FFF8DE")
-        t.begin_fill()
-        t.forward(400)
-        t.right(90)
-        t.forward(100)
-        t.right(90)
-        t.forward(400)
-        t.right(90)
-        t.forward(100)
-        t.right(90)
+        for i in range(2):
+            t.begin_fill()
+            t.forward(400)
+            t.right(90)
+            t.forward(100)
+            t.right(90)
         t.end_fill()
         t.penup()
         t.goto(width/2, var_height-67.5)
@@ -58,18 +57,78 @@ def startGame():
         t.write(button_names[i], align = "center", font = ("Courier", 30, "bold"))
         var_height = var_height - 150
 
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#This function gives the position of any element in the 2d list-------> 
+def getElementPos(num_list, element):
+    for i in num_list:
+        for j in i:
+            if j == element:
+                 pos_x = i.index(j)
+                 pos_y = num_list.index(i)
+                 return [pos_x, pos_y]
+                
+#This function gives the list of all the valid moves that can be done in any state-------> 
+def giveValidMoves(num_list):
+    x = getElementPos(num_list,0)[0]
+    y = getElementPos(num_list,0)[1]
+    valid_moves = []
+    
+    try:
+        valid_moves.append(num_list[y+1][x])
+    except:
+        pass
+    try:
+        valid_moves.append(num_list[y-1][x])
+    except:
+        pass
+    try:
+        valid_moves.append(num_list[y][x+1])
+    except:
+        pass
+    try:
+        valid_moves.append(num_list[y][x-1])
+    except:
+        pass
+
+    return valid_moves
 
 
 
+#This function jumbles the solved grid to make solvable grids-------> 
+def generateGrid(n):
+    solved = [[1,2,3,4], [5,6,7,8], [9,10,11,12], [13,14,15,0]]
+    jumbled = [[1,2,3,4], [5,6,7,8], [9,10,11,12], [13,14,15,0]]
+    
+    while jumbled == solved:
+        for i in range(n):
+            valid_moves = giveValidMoves(jumbled)
+            selected_move = random.choice(valid_moves)
+            move_posX = getElementPos(jumbled, selected_move)[0]
+            move_posY = getElementPos(jumbled, selected_move)[1]
+            zero_posX = getElementPos(jumbled, 0)[0]
+            zero_posY = getElementPos(jumbled, 0)[1]
+            temp = jumbled[move_posY][move_posX]
+            jumbled[move_posY][move_posX] = jumbled[zero_posY][zero_posX]
+            jumbled[zero_posY][zero_posX] = temp
+    
+    return jumbled
 
-
-
-#function that draws the initial grid
-def loadGrid(num_list):
-
+#function that draws the initial grid-------------------->
+def showGrid(num_list):
+    t.speed(0)
+    global user_name
+    user_name = wn.textinput("login", "Enter your name: ", )
+    if not user_name:
+        user_name = "User"
+    global game_state
     game_state = "game_screen"
 
-    t.speed(0)
+    t.penup()
+    t.goto(0, height*(0.75))
+    t.pendown()
+    t.write(("Hello, "+ user_name + "!!"), align = "center", font = ("Courier", 30, "bold"))
+    
     var_width = (width/2)
     var_height = height*(0.75)
     t.penup()
@@ -90,48 +149,29 @@ def loadGrid(num_list):
             t.goto(var_width, var_height)
             t.pendown()
             t.begin_fill()
-            t.forward(120)
-            t.right(90)
-            t.forward(120)
-            t.right(90)
-            t.forward(120)
-            t.right(90)
-            t.forward(120)
-            t.right(90)
+            for n in range(4):
+                t.forward(120)
+                t.right(90)
             t.end_fill()
             t.penup()
-            t.goto(var_width + 60, var_height - 60)
-            t.write(num_list[i][j], align = "center", font = ("Courier", 20, "bold"))
+            t.goto(var_width + 60, var_height - 65)
+            t.write(num_list[i][j], align = "center", font = ("Courier", 30, "bold"))
             var_width = var_width + 120
 
         var_width = (width/2)
         var_height = var_height-120
-        
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-num_list = [[1,3,4,15],[14,13,7,2],[5,10,6,9],[8,11,12,0]]
+            
 
-
-def generateNewGame(n):
-    solved_grid = [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,0]]
-    for i in range(n):
-        move_type = random.choice([1,2,3,4])
-        #check if the move is valid or not and convert the move to a state in list of lists form
+showGrid(generateGrid(4))
 
 
 
 
 
-
-
-
-print(width, height)
-
-
-
-# startGame()
-# loadGrid(num_list)
-generateNewGame(3)
 
 turtle.done()
-turtle.mainloop()
+screen.mainloop()

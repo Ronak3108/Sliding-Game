@@ -187,6 +187,31 @@ def gameScreen():
     t.pencolor("#ff0000")
     t.write(("HELLO "+ user_name.upper() + "!!"), align = "center", font = ("Courier", 40, "bold"))
     
+    var_height = (height/2)
+    button_names = ["UNDO", "CHECKPOINT"]
+    for i in range(2):
+        t.penup()
+        t.goto(-200, var_height)
+        t.pendown()
+        t.fillcolor("#FFF8DE")
+        t.begin_fill()
+        t.forward(400)
+        t.right(90)
+        t.forward(100)
+        t.right(90)
+        t.forward(400)
+        t.right(90)
+        t.forward(100)
+        t.right(90)
+        t.end_fill()
+        t.penup()
+        t.goto(0, var_height-67.5)
+        t.pencolor("#000000")
+        t.pendown()
+        t.write(button_names[i], align = "center", font = ("Courier", 30, "bold"))
+        var_height = var_height - 150
+
+    
     if difficulty == 1:
         grid_state = generateGrid(1)
     elif difficulty == 2:
@@ -202,9 +227,10 @@ def gameScreen():
 
     try:
         with open(f"{user_name}_{timestamp}.txt", "w") as save_file:
-            save_file.write("")
+            save_file.write(f"{grid_state}\n")
     except IOError as e:
         print(f"Error saving game: {e}")
+
 
     drawGrid(grid_state)
     game_state = "game_start"
@@ -218,18 +244,50 @@ def leadScreen():
     global game_state
     game_state = "lead_screen"
 
-    #setting up a space like color as background
+    # Setting up a space-like color as background
     wn.bgcolor("#090034")
 
     showHeading()
 
     t.penup()
-    t.goto(width/2, height*(0.8))
+    t.goto(width / 2, height * 0.8)
     t.pendown()
     t.pencolor("#ff0000")
-    t.write("LEADERBOARD", align = "center", font = ("Courier", 40, "bold"))
-    
+    t.write("LEADERBOARD", align="center", font=("Courier", 40, "bold"))
+
+    # Load leaderboard and display it
     drawBackButton()
+    loadLeaderboard()
+    wn.onclick(playGame)
+
+
+def loadLeaderboard():
+    try:
+        with open("leaderboard.txt", "r") as file:
+            lines = file.readlines()
+
+        leaderboard = []
+        for line in lines:
+            name, score, timestamp = line.strip().split(",")
+            leaderboard.append((name, int(score), timestamp))
+
+        # Sort the leaderboard by score in descending order
+        leaderboard.sort(key=lambda x: x[1], reverse=True)
+
+        # Display the leaderboard
+        var_height = height * 0.5
+        t.penup()
+        for i, (name, score, timestamp) in enumerate(leaderboard[:10]):  # Show top 10 players
+            t.goto(width / 2, var_height)
+            t.pendown()
+            t.pencolor("#FFFFFF")
+            t.write(f"{i+1}. {name} - {score} points", align="center", font=("Courier", 25, "bold"))
+            var_height -= 40  # Adjust vertical space between names
+
+    except IOError as e:
+        print(f"Error reading leaderboard: {e}")
+
+            
 
 
 def replayScreen():
@@ -263,6 +321,9 @@ def replayScreen():
 
     except FileNotFoundError:
         print("Replay file not found!")
+    filename = f"{user_name}_{timestamp}.txt"
+    if os.path.exists(filename):
+        os.remove(filename)
 
 
 
@@ -270,7 +331,7 @@ def replayScreen():
 #Functions that handle navigation between different screens------------------------------------------------------------------------------------>
 def navigate(x, y):
     global game_state
-    if int(x) in range(-200,-100) and int(y) in range(height-50,height):
+    if -200<=int(x)<=-100 and height/2-100<=int(y)<=height/2:
         t.clear()
         t1.clear()
         game_state = "home_screen"
@@ -357,6 +418,9 @@ def playGame(x,y):
             grid_state[zero_i][zero_j], grid_state[i][j] = grid_state[i][j], grid_state[zero_i][zero_j]
             t1.clear()
             drawGrid(grid_state)
+        elif game_state == "game_start":
+            if int(x) in range(-200, 200) and int(y) in range(int(height/2)-100, int(height/2)):
+                undo()
     
     if int(x) in range(-200,-100) and int(y) in range(height-50,height):
         t.clear()
@@ -385,10 +449,32 @@ def playGame(x,y):
                 os.remove(filename)
             home()
             wn.onclick(navigate)
+    elif game_state == "game_start":
+        if int(x) in range(-200, 200) and int(y) in range(int(height/2)-100, int(height/2)):
+            undo()
+            
+    
+
+
 
 def declareWin():
     global move_count
     global game_state
+    global difficulty
+    global user_name
+    global timestamp
+    
+    difficulty_points = {
+        1: 200,
+        2: 300,
+        3: 400,
+        4: 500
+    }
+    
+    score = difficulty_points.get(difficulty, 200) 
+    
+    saveScore(user_name, score)
+    
     game_state = "game_won"
     elapsed_time = time.time() - start_time
     mins = int(elapsed_time // 60)
@@ -436,6 +522,19 @@ def declareWin():
     wn.onclick(navigate)
     
     
+    
+
+def saveScore(player_name, score):
+    try:
+        with open("leaderboard.txt", "a") as file:
+            file.write(f"{player_name},{score},{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    except IOError as e:
+        print(f"Error saving score: {e}")
+    
+    
+    
+    
+    
 def drawBackButton():
     t.penup()
     t.goto(-200, height)
@@ -464,29 +563,67 @@ def timer():
     global start_time
     global game_state
 
-    if game_state == "game_start":
-        elapsed_time = time.time() - start_time
-        mins = int(elapsed_time // 60)
-        secs = int(elapsed_time % 60)
-        timeTurtle.clear()
-        timeTurtle.penup()
-        timeTurtle.goto(width, height*(0.75)+25)
-        timeTurtle.pendown()
-        timeTurtle.pencolor("yellow")
-        timeTurtle.write(f"Time: {mins:02}:{secs:02}", align="center", font=("Courier", 20, "bold"))
-        wn.update()
-        wn.ontimer(timer, 100) # schedule the next timer call
-    else:
-        timeTurtle.clear()
-        wn.update()
+    try:
+        if game_state == "game_start":
+            elapsed_time = time.time() - start_time
+            mins = int(elapsed_time // 60)
+            secs = int(elapsed_time % 60)
+            timeTurtle.clear()
+            timeTurtle.penup()
+            timeTurtle.goto(width - 100, height*(0.75) + 25)
+            timeTurtle.pendown()
+            timeTurtle.pencolor("yellow")
+            timeTurtle.write(f"Time: {mins:02}:{secs:02}", align="center", font=("Courier", 20, "bold"))
+            wn.update()
+            wn.ontimer(timer, 100)
+        else:
+            timeTurtle.clear()
+            wn.update()
+    except:
+        return
+
+def undo():
+    global grid_state, user_name, timestamp, move_count
+
+    filename = f"{user_name}_{timestamp}.txt"
+
+    if not os.path.exists(filename):
+        print("No moves to undo.")
+        return
+
+    try:
+        with open(filename, "r") as file:
+            lines = file.readlines()
+
+        if len(lines) <= 1:
+            print("No moves to undo.")
+            return
 
 
-#Add leaderboard
-#add an undo button while playing game.
-#add a quick checkpoint button
+        lines.pop()
+
+
+        last_state = lines[-1].strip()
+
+
+        grid_state = ast.literal_eval(last_state)
+
+e
+        with open(filename, "w") as file:
+            file.writelines(lines)
+
+        move_count = max(0, move_count - 1)
+        t1.clear()
+        drawGrid(grid_state)
+
+    except Exception as e:
+        print(f"Undo failed: {e}")
+
+
 
 home()
 wn.onclick(navigate)
 
 turtle.done()
 wn.mainloop()
+

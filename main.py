@@ -36,6 +36,11 @@ move_count = 0
 start_time = 0
 elapsed_time = 0
 timestamp = 0
+checkpoint_state = None
+checkpoint_moves = 0
+checkpoint_time = 0
+checkpoint_active = False
+
 
 
 #UTILITY FUNCTIONS--------------------------------------------------------------------------------------------------------------------------------------->
@@ -188,7 +193,13 @@ def gameScreen():
     t.write(("HELLO "+ user_name.upper() + "!!"), align = "center", font = ("Courier", 40, "bold"))
     
     var_height = (height/2)
-    button_names = ["UNDO", "CHECKPOINT"]
+    if not checkpoint_active:
+        button2_name = "CHECKPOINT"
+    else:
+        button2_name = "RETURN"
+
+    button_names = ["UNDO", button2_name]
+
     for i in range(2):
         t.penup()
         t.goto(-200, var_height)
@@ -213,13 +224,13 @@ def gameScreen():
 
     
     if difficulty == 1:
-        grid_state = generateGrid(1)
+        grid_state = generateGrid(10)
     elif difficulty == 2:
-        grid_state = generateGrid(50)
+        grid_state = generateGrid(30)
     elif difficulty == 3:
-        grid_state = generateGrid(100)
+        grid_state = generateGrid(80)
     elif difficulty == 4:
-        grid_state = generateGrid(200)
+        grid_state = generateGrid(150)
     else:
         grid_state = generateGrid(100)
     
@@ -452,6 +463,9 @@ def playGame(x,y):
     elif game_state == "game_start":
         if int(x) in range(-200, 200) and int(y) in range(int(height/2)-100, int(height/2)):
             undo()
+        elif int(x) in range(-200, 200) and int(y) in range(int(height/2)-250, int(height/2)-150):
+            handleCheckpoint()
+            return
             
     
 
@@ -608,7 +622,7 @@ def undo():
 
         grid_state = ast.literal_eval(last_state)
 
-e
+
         with open(filename, "w") as file:
             file.writelines(lines)
 
@@ -620,6 +634,61 @@ e
         print(f"Undo failed: {e}")
 
 
+def handleCheckpoint():
+    global checkpoint_state
+    global checkpoint_state
+    global checkpoint_moves
+    global checkpoint_time
+    global checkpoint_active
+    global grid_state
+    global move_count
+    global elapsed_time
+    global start_time
+
+    if not checkpoint_active:
+        checkpoint_state = [row[:] for row in grid_state]
+        checkpoint_moves = move_count
+        checkpoint_time = elapsed_time
+        checkpoint_active = True
+    else:
+        if checkpoint_state:
+            grid_state = [row[:] for row in checkpoint_state]
+            move_count = checkpoint_moves
+            start_time = time.time() - checkpoint_time
+            t1.clear()
+            drawGrid(grid_state)
+    t.clear()
+    showHeading()
+    drawBackButton()
+    var_height = height/2
+
+    if not checkpoint_active:
+        button2_name = "CHECKPOINT"
+    else:
+        button2_name = "RETURN"
+        
+        button_names = ["UNDO", button2_name]
+    for i in range(2):
+        t.penup()
+        t.goto(-200, var_height)
+        t.pendown()
+        t.fillcolor("#FFF8DE")
+        t.begin_fill()
+        t.forward(400)
+        t.right(90)
+        t.forward(100)
+        t.right(90)
+        t.forward(400)
+        t.right(90)
+        t.forward(100)
+        t.right(90)
+        t.end_fill()
+        t.penup()
+        t.goto(0, var_height-67.5)
+        t.pencolor("#000000")
+        t.pendown()
+        t.write(button_names[i], align = "center", font = ("Courier", 30, "bold"))
+        var_height = var_height - 150
 
 home()
 wn.onclick(navigate)

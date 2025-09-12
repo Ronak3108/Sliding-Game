@@ -5,28 +5,26 @@ from datetime import datetime
 import os
 import ast
 
-#creating a turtle screen and pen object
+
 wn = turtle.Screen()
 t = turtle.Turtle()
 t1 = turtle.Turtle()
 timeTurtle = turtle.Turtle()
+t.hideturtle()
+t1.hideturtle()
+timeTurtle.hideturtle()
+
 t.speed(0)
 t1.speed(0)
 timeTurtle.speed(0)
 
-#storing the vaue of the width and height og the screen
 width = wn.window_width()
 height = wn.window_height()
 
-#setting up custom co-ordinates
 wn.setworldcoordinates(0, 0, width, height)
 
-#setting up a space like color as background
 wn.bgcolor("#090034")
 
-
-
-#creating a variable to monitor state
 game_state = "home_screen"
 
 user_name = ""
@@ -37,8 +35,6 @@ start_time = 0
 elapsed_time = 0
 timestamp = 0
 checkpoint_state = None
-checkpoint_moves = 0
-checkpoint_time = 0
 checkpoint_active = False
 
 
@@ -54,13 +50,13 @@ def generateGrid(n):
         for i in range(n):
             valid_moves = giveValidMoves(jumbled)
             selected_move = random.choice(valid_moves)
-            move_posX = getElementPos(jumbled, selected_move)[0]
-            move_posY = getElementPos(jumbled, selected_move)[1]
-            zero_posX = getElementPos(jumbled, 0)[0]
-            zero_posY = getElementPos(jumbled, 0)[1]
-            temp = jumbled[move_posY][move_posX]
-            jumbled[move_posY][move_posX] = jumbled[zero_posY][zero_posX]
-            jumbled[zero_posY][zero_posX] = temp
+            x = getElementPos(jumbled, selected_move)[0]
+            y = getElementPos(jumbled, selected_move)[1]
+            x0 = getElementPos(jumbled, 0)[0]
+            y0 = getElementPos(jumbled, 0)[1]
+            temp = jumbled[y][x]
+            jumbled[y][x] = jumbled[y0][x0]
+            jumbled[y0][x0] = temp
     
     return jumbled
 
@@ -151,12 +147,11 @@ def home():
         var_height = var_height - 150
 
 
-
-#function that draws the game screen and the initial grid-------------------->
+#function that starts the game screen of the game----------------------->
 def gameScreen():
 
     global game_state
-    game_state = "game_screen"    #changing the game state to game_screen
+    game_state = "game_screen"
     
     global start_time
     global move_count
@@ -166,7 +161,6 @@ def gameScreen():
     start_time = 0
     elapsed_time = 0
     
-    #setting up a space like color as background
     wn.bgcolor("#090034")
     global grid_state
 
@@ -176,10 +170,7 @@ def gameScreen():
         user_name = "USER"
     
     global difficulty
-    try:
-        difficulty = int(wn.textinput("difficulty level", "Enter difficulty level (1-4): "))
-    except:
-        difficulty = 4
+    difficulty = int(wn.textinput("difficulty level", "Enter difficulty level (1-4): "))
 
     showHeading()
     drawBackButton()
@@ -236,11 +227,8 @@ def gameScreen():
     
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    try:
-        with open(f"{user_name}_{timestamp}.txt", "w") as save_file:
-            save_file.write(f"{grid_state}\n")
-    except IOError as e:
-        print(f"Error saving game: {e}")
+    with open(f"{user_name}_{timestamp}.txt", "w") as file:
+        file.write(f"{grid_state}\n")
 
 
     drawGrid(grid_state)
@@ -250,12 +238,11 @@ def gameScreen():
     
     
 
-
+#function that starts the leaderboard screen of the game----------------------->
 def leadScreen():
     global game_state
     game_state = "lead_screen"
 
-    # Setting up a space-like color as background
     wn.bgcolor("#090034")
 
     showHeading()
@@ -266,50 +253,42 @@ def leadScreen():
     t.pencolor("#ff0000")
     t.write("LEADERBOARD", align="center", font=("Courier", 40, "bold"))
 
-    # Load leaderboard and display it
     drawBackButton()
     loadLeaderboard()
     wn.onclick(playGame)
 
-
+#function that loads the leaderboard by reading data from the file named "leaderboard.txt"----------------------->
 def loadLeaderboard():
-    try:
-        with open("leaderboard.txt", "r") as file:
-            lines = file.readlines()
+    with open("leaderboard.txt", "r") as file:
+        lines = file.readlines() #this takes all the lines in the file in this variable named lines
 
-        leaderboard = []
-        for line in lines:
-            name, score, timestamp = line.strip().split(",")
-            leaderboard.append((name, int(score), timestamp))
+    leaderboard = [] #this list will contain the data to be shown on the leaderboard screen
+    for line in lines:
+        name, score, timestamp = line.strip().split(",") #it separates the string by commas and stores the substrings on the variables in the order they are written.
+        leaderboard.append((name, int(score), timestamp)) #adding the data to leaderboard
 
-        # Sort the leaderboard by score in descending order
-        leaderboard.sort(key=lambda x: x[1], reverse=True)
+    leaderboard.sort(key=lambda x: x[1], reverse=True) #this sorts the list wrt the highest score because 1 is the index of score
 
-        # Display the leaderboard
-        var_height = height * 0.5
-        t.penup()
-        for i, (name, score, timestamp) in enumerate(leaderboard[:10]):  # Show top 10 players
-            t.goto(width / 2, var_height)
-            t.pendown()
-            t.pencolor("#FFFFFF")
-            t.write(f"{i+1}. {name} - {score} points", align="center", font=("Courier", 25, "bold"))
-            var_height -= 40  # Adjust vertical space between names
-
-    except IOError as e:
-        print(f"Error reading leaderboard: {e}")
+    #this displays the leaderboard list on the screen
+    var_height = height * 0.5
+    t.penup()
+    for i, (name, score, timestamp) in enumerate(leaderboard):
+        t.goto(width / 2, var_height)
+        t.pendown()
+        t.pencolor("#FFFFFF")
+        t.write(f"{i+1}. {name} - {score} points", align="center", font=("Courier", 25, "bold"))
+        var_height -= 40
 
             
 
-
+#function that starts the leaderboard screen of the game----------------------->
 def replayScreen():
     global game_state, user_name, timestamp
-    game_state = "replay_screen"
+    game_state = "replay_screen" #changing the game_state to replay screen
 
-    #setting up a space like color as background
     wn.bgcolor("#090034")
 
     showHeading()
-
     t.penup()
     t.goto(width/2, height*(0.8))
     t.pendown()
@@ -320,19 +299,17 @@ def replayScreen():
 
 
     filename = f"{user_name}_{timestamp}.txt"
-    try:
-        with open(filename, "r") as file:
-            states = file.readlines()  # Each line is a string of grid_state
+#reading the file in which all the moves we amde are saved.
+    with open(filename, "r") as file:
+        states = file.readlines()
 
-        for state in states:
-            grid = ast.literal_eval(state.strip())  # Convert string back to list
-            t1.clear()
-            drawGrid(grid)
-            time.sleep(0.5)  # Delay between steps
+    for state in states:
+        grid = ast.literal_eval(state.strip()) #converting script to python script
+        t1.clear()
+        drawGrid(grid)
+        time.sleep(0.5)
 
-    except FileNotFoundError:
-        print("Replay file not found!")
-    filename = f"{user_name}_{timestamp}.txt"
+    filename = f"{user_name}_{timestamp}.txt" #deleting the file that stored the game moves are deleted after the replay is watched or if the user chose not to watch it.
     if os.path.exists(filename):
         os.remove(filename)
 
@@ -360,10 +337,13 @@ def navigate(x, y):
 
             
             
-
+#function that draws the grid everytime a move is made and also in the start of the game----------------------->
 def drawGrid(num_list):
     global solved
     wn.tracer(0)
+    t.hideturtle()
+    t1.hideturtle()
+    timeTurtle.hideturtle()
     var_width = (width/2)
     var_height = height*(0.75)
     t1.penup()
@@ -395,12 +375,12 @@ def drawGrid(num_list):
 
         var_width = (width/2)
         var_height = var_height-120
-    wn.update()
+    wn.update() # this updates the screen after a time instead of showing us the entire procedure of drawing the grid again.
     
-    if grid_state == solved and game_state != "replay_screen":
+    if grid_state == solved and game_state != "replay_screen": #checking if the user has completed the game or not.
         declareWin()
         
-    wn.onclick(playGame)
+    wn.onclick(playGame) #this function handles the entire click handling except in the homescreen because that is handled by navigate function.
 
 def playGame(x,y):
     global move_count
@@ -408,12 +388,10 @@ def playGame(x,y):
     global grid_state
     global game_state
     global timestamp
-    try:
-        with open(f"{user_name}_{timestamp}.txt", "a") as save_file:
-            save_file.write(f"{grid_state}\n")
-    except:
-        print("Error saving game")
-        
+    with open(f"{user_name}_{timestamp}.txt", "a") as save_file:
+        save_file.write(f"{grid_state}\n") # every move is stored inside this text file in form of grid state
+    
+
     j = int((x - (width/2)) // 120)
     i = int(((height*(0.75)) - y) // 120)
     
@@ -428,29 +406,27 @@ def playGame(x,y):
         if (abs(i - zero_i) == 1 and j == zero_j) or (abs(j - zero_j) == 1 and i == zero_i):
             grid_state[zero_i][zero_j], grid_state[i][j] = grid_state[i][j], grid_state[zero_i][zero_j]
             t1.clear()
-            drawGrid(grid_state)
+            drawGrid(grid_state) # redraws the grid after every move
         elif game_state == "game_start":
             if int(x) in range(-200, 200) and int(y) in range(int(height/2)-100, int(height/2)):
-                undo()
+                undo() # handles the undo functionality
     
-    if int(x) in range(-200,-100) and int(y) in range(height-50,height):
+    if int(x) in range(-200,-100) and int(y) in range(height-50,height): # handles the back button clicking in every game state
         t.clear()
         t1.clear()
         game_state = "home_screen"
         home()
-        try:
-            filename = f"{user_name}_{timestamp}.txt"
-            if os.path.exists(filename):
-                os.remove(filename)
-        except:
-            pass
+        filename = f"{user_name}_{timestamp}.txt"
+        if os.path.exists(filename):
+            os.remove(filename)
+
         
         wn.onclick(navigate)
     elif game_state == "game_won":
         if int(x) in range(int(width/2)-200, int(width/2)+200) and int(y) in range(int(height/2)-50, int(height/2)+50):
             t.clear()
             t1.clear()
-            replayScreen()
+            replayScreen() # calling the replay function
 
         elif int(x) in range(int(width/2)-200, int(width/2)+200) and int(y) in range(int(height/2)-200, int(height/2)-100):
             t.clear()
@@ -464,33 +440,36 @@ def playGame(x,y):
         if int(x) in range(-200, 200) and int(y) in range(int(height/2)-100, int(height/2)):
             undo()
         elif int(x) in range(-200, 200) and int(y) in range(int(height/2)-250, int(height/2)-150):
-            handleCheckpoint()
+            handleCheckpoint() # cslling the checkpoint handling function
             return
+
             
     
 
 
-
+# this function is called when the user has completed the game-------------------->
 def declareWin():
     global move_count
     global game_state
     global difficulty
     global user_name
     global timestamp
+
+    # score is given on the basis of difficulty
+    if difficulty == 1:
+        score = 200
+    elif difficulty == 2:
+        score = 300
+    elif difficulty == 3:
+        score = 400
+    elif difficulty == 4:
+        score = 500
     
-    difficulty_points = {
-        1: 200,
-        2: 300,
-        3: 400,
-        4: 500
-    }
-    
-    score = difficulty_points.get(difficulty, 200) 
-    
+    # thwe score is saved in the leaderboard file
     saveScore(user_name, score)
     
-    game_state = "game_won"
-    elapsed_time = time.time() - start_time
+    game_state = "game_won" #changing the game state to game_won
+    elapsed_time = time.time() - start_time # calcularing total time taken to complete the game
     mins = int(elapsed_time // 60)
     secs = int(elapsed_time % 60)
     t.clear()
@@ -499,7 +478,7 @@ def declareWin():
     t.goto(width/2, height/2+150)
     t.pendown()
     t.pencolor("yellow")
-    t.write("CONGRATULATIONS ON FINISHING THE GAME,", align = "center", font = ("Courier", 30, "bold"))
+    t.write(f"CONGRATULATIONS ON FINISHING THE GAME IN {mins:02}:{secs:02},", align = "center", font = ("Courier", 30, "bold"))
     t.penup()
     t.goto(width/2, height/2+100)
     t.pendown()
@@ -537,18 +516,13 @@ def declareWin():
     
     
     
-
-def saveScore(player_name, score):
-    try:
-        with open("leaderboard.txt", "a") as file:
-            file.write(f"{player_name},{score},{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    except IOError as e:
-        print(f"Error saving score: {e}")
+# this function writes in a text file storing the 
+def saveScore(name, score):
+    with open("leaderboard.txt", "a") as file:
+        file.write(f"{name},{score},{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
     
     
-    
-    
-    
+# draws the back buttonon every screen
 def drawBackButton():
     t.penup()
     t.goto(-200, height)
@@ -571,95 +545,77 @@ def drawBackButton():
     t.write("BACK", align = "center", font = ("Courier", 15, "bold"))
 
 
-
+# this function shows the timer and updates it while the game is being played. It uses a separate turtle to draw it.
 def timer():
     global elapsed_time
     global start_time
     global game_state
 
-    try:
-        if game_state == "game_start":
-            elapsed_time = time.time() - start_time
-            mins = int(elapsed_time // 60)
-            secs = int(elapsed_time % 60)
-            timeTurtle.clear()
-            timeTurtle.penup()
-            timeTurtle.goto(width - 100, height*(0.75) + 25)
-            timeTurtle.pendown()
-            timeTurtle.pencolor("yellow")
-            timeTurtle.write(f"Time: {mins:02}:{secs:02}", align="center", font=("Courier", 20, "bold"))
-            wn.update()
-            wn.ontimer(timer, 100)
-        else:
-            timeTurtle.clear()
-            wn.update()
-    except:
-        return
 
+    if game_state == "game_start":
+        elapsed_time = time.time() - start_time
+        mins = int(elapsed_time // 60)
+        secs = int(elapsed_time % 60)
+        timeTurtle.clear()
+        timeTurtle.penup()
+        timeTurtle.goto(width - 100, height*(0.75) + 25)
+        timeTurtle.pendown()
+        timeTurtle.pencolor("yellow")
+        timeTurtle.write(f"Time: {mins:02}:{secs:02}", align="center", font=("Courier", 20, "bold"))
+        wn.update()
+        wn.ontimer(timer, 100)
+    else:
+        timeTurtle.clear()
+        wn.update()
+
+#this function handles the undo functionality
 def undo():
     global grid_state, user_name, timestamp, move_count
 
     filename = f"{user_name}_{timestamp}.txt"
 
-    if not os.path.exists(filename):
-        print("No moves to undo.")
+    with open(filename, "r") as file:
+        lines = file.readlines()
+
+    if len(lines) <= 1:
         return
 
-    try:
-        with open(filename, "r") as file:
-            lines = file.readlines()
 
-        if len(lines) <= 1:
-            print("No moves to undo.")
-            return
+    lines.pop()  #last element of the list is removed using pop to delete the last move from the file
 
 
-        lines.pop()
+    last_state = lines[-1].strip() # removes the white spaces in the string
 
 
-        last_state = lines[-1].strip()
+    grid_state = ast.literal_eval(last_state)  # string is converted to python script
 
 
-        grid_state = ast.literal_eval(last_state)
+    with open(filename, "w") as file:
+        file.writelines(lines)
 
-
-        with open(filename, "w") as file:
-            file.writelines(lines)
-
-        move_count = max(0, move_count - 1)
-        t1.clear()
-        drawGrid(grid_state)
-
-    except Exception as e:
-        print(f"Undo failed: {e}")
+    move_count = max(0, move_count - 1)
+    t1.clear()
+    drawGrid(grid_state)
 
 
 def handleCheckpoint():
     global checkpoint_state
-    global checkpoint_state
-    global checkpoint_moves
-    global checkpoint_time
     global checkpoint_active
     global grid_state
-    global move_count
-    global elapsed_time
-    global start_time
+
+    t.clear()
+    showHeading()
+    drawBackButton()
 
     if not checkpoint_active:
         checkpoint_state = [row[:] for row in grid_state]
-        checkpoint_moves = move_count
-        checkpoint_time = elapsed_time
         checkpoint_active = True
     else:
         if checkpoint_state:
             grid_state = [row[:] for row in checkpoint_state]
-            move_count = checkpoint_moves
-            start_time = time.time() - checkpoint_time
             t1.clear()
             drawGrid(grid_state)
-    t.clear()
-    showHeading()
-    drawBackButton()
+
     var_height = height/2
 
     if not checkpoint_active:
